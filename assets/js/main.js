@@ -130,22 +130,75 @@ function disposeCurrentObject() {
 }
 
 function loadAsset(asset) {
-  // ✅ Ruta correcta desde assets/js/main.js a /models/fbx/
-  const path = "../../models/fbx/" + asset + ".fbx";
 
-  loader.load(path, function (group) {
-    disposeCurrentObject();
+  // ✅ Base real del archivo main.js (funciona en local y en GitHub Pages)
+  const base = new URL('../../models/fbx/', import.meta.url);
+  const url = new URL(`${asset}.fbx`, base).href;
 
-    object = group;
+  loader.load(
+    url,
+    function (group) {
 
-    // ✅ Si trae clips de animación (ej. Samba Dancing)
-    if (object.animations && object.animations.length) {
-      mixer = new THREE.AnimationMixer(object);
-      const action = mixer.clipAction(object.animations[0]);
-      action.play();
-    } else {
-      mixer = null;
+      // limpia el anterior
+      if (object) {
+        object.traverse(function (child) {
+          if (child.isSkinnedMesh && child.skeleton) child.skeleton.dispose();
+
+          if (child.material) {
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            materials.forEach((material) => {
+              if (material.map) material.map.dispose();
+              material.dispose();
+            });
+          }
+
+          if (child.geometry) child.geometry.dispose();
+        });
+
+        scene.remove(object);
+      }
+
+      object = group;
+
+      // animación si existe
+      if (object.animations && object.animations.length) {
+        mixer = new THREE.AnimationMixer(object);
+        mixer.clipAction(object.animations[0]).play();
+      } else {
+        mixer = null;
+      }
+
+      // morph GUI
+      guiMorphsFolder.children.forEach((c) => c.destroy());
+      guiMorphsFolder.hide();
+
+      object.traverse(function (child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          if (child.morphTargetDictionary) {
+            guiMorphsFolder.show();
+            const meshFolder = guiMorphsFolder.addFolder(child.name || child.uuid);
+            Object.keys(child.morphTargetDictionary).forEach((key) => {
+              meshFolder.add(child.morphTargetInfluences, child.morphTargetDictionary[key], 0, 1, 0.01);
+            });
+          }
+        }
+      });
+
+      scene.add(object);
+    },
+
+    undefined,
+
+    // ✅ si falla, te dice exactamente qué pasó
+    function (err) {
+      console.error('❌ Error cargando FBX:', asset, err);
+      console.error('URL intentada:', url);
     }
+  );
+}
 
     // ✅ Reset GUI morphs
     guiMorphsFolder.children.forEach((child) => child.destroy());
