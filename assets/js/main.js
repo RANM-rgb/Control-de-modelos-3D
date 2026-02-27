@@ -15,11 +15,13 @@ const timer = new THREE.Timer();
 timer.connect(document);
 
 const params = {
-  asset: "Samba Dancing",
+  // ✅ Renombra el archivo para evitar espacios:
+  // models/fbx/Samba_Dancing.fbx
+  asset: "Samba_Dancing",
 };
 
 const assets = [
-  "Samba Dancing",
+  "Samba_Dancing",
   "morph_test",
   "monkey",
   "monkey_embedded_texture",
@@ -75,7 +77,6 @@ function init() {
   scene.add(grid);
 
   loader = new FBXLoader(manager);
-  loadAsset(params.asset);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -90,26 +91,26 @@ function init() {
 
   window.addEventListener("resize", onWindowResize);
 
-  // stats
   stats = new Stats();
   container.appendChild(stats.dom);
 
   const gui = new GUI();
-  gui.add(params, "asset", assets).onChange(function (value) {
-    currentAsset = value; // ✅ guarda asset actual
+  gui.add(params, "asset", assets).onChange((value) => {
+    currentAsset = value;
     loadAsset(value);
   });
 
   guiMorphsFolder = gui.addFolder("Morphs").hide();
+
+  // ✅ Carga inicial
+  loadAsset(params.asset);
 }
 
 function disposeCurrentObject() {
   if (!object) return;
 
-  object.traverse(function (child) {
-    if (child.isSkinnedMesh && child.skeleton) {
-      child.skeleton.dispose();
-    }
+  object.traverse((child) => {
+    if (child.isSkinnedMesh && child.skeleton) child.skeleton.dispose();
 
     if (child.material) {
       const materials = Array.isArray(child.material)
@@ -127,40 +128,29 @@ function disposeCurrentObject() {
 
   scene.remove(object);
   object = null;
+  mixer = null;
+}
+
+function resetMorphGUI() {
+  if (!guiMorphsFolder) return;
+  guiMorphsFolder.children.forEach((c) => c.destroy());
+  guiMorphsFolder.hide();
 }
 
 function loadAsset(asset) {
-
-  // ✅ Base real del archivo main.js (funciona en local y en GitHub Pages)
-  const base = new URL('../../models/fbx/', import.meta.url);
+  // ✅ Ruta robusta para GitHub Pages/local (NO depende del nombre del repo)
+  const base = new URL("../../models/fbx/", import.meta.url);
   const url = new URL(`${asset}.fbx`, base).href;
 
   loader.load(
     url,
-    function (group) {
-
-      // limpia el anterior
-      if (object) {
-        object.traverse(function (child) {
-          if (child.isSkinnedMesh && child.skeleton) child.skeleton.dispose();
-
-          if (child.material) {
-            const materials = Array.isArray(child.material) ? child.material : [child.material];
-            materials.forEach((material) => {
-              if (material.map) material.map.dispose();
-              material.dispose();
-            });
-          }
-
-          if (child.geometry) child.geometry.dispose();
-        });
-
-        scene.remove(object);
-      }
+    (group) => {
+      disposeCurrentObject();
+      resetMorphGUI();
 
       object = group;
 
-      // animación si existe
+      // ✅ Si trae animaciones (Samba_Dancing)
       if (object.animations && object.animations.length) {
         mixer = new THREE.AnimationMixer(object);
         mixer.clipAction(object.animations[0]).play();
@@ -168,53 +158,16 @@ function loadAsset(asset) {
         mixer = null;
       }
 
-      // morph GUI
-      guiMorphsFolder.children.forEach((c) => c.destroy());
-      guiMorphsFolder.hide();
+      // ✅ Sombras + Morph GUI
+      object.traverse((child) => {
+        if (!child.isMesh) return;
 
-      object.traverse(function (child) {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-
-          if (child.morphTargetDictionary) {
-            guiMorphsFolder.show();
-            const meshFolder = guiMorphsFolder.addFolder(child.name || child.uuid);
-            Object.keys(child.morphTargetDictionary).forEach((key) => {
-              meshFolder.add(child.morphTargetInfluences, child.morphTargetDictionary[key], 0, 1, 0.01);
-            });
-          }
-        }
-      });
-
-      scene.add(object);
-    },
-
-    undefined,
-
-    // ✅ si falla, te dice exactamente qué pasó
-    function (err) {
-      console.error('❌ Error cargando FBX:', asset, err);
-      console.error('URL intentada:', url);
-    }
-  );
-}
-
-    // ✅ Reset GUI morphs
-    guiMorphsFolder.children.forEach((child) => child.destroy());
-    guiMorphsFolder.hide();
-
-    // ✅ Sombras + morph sliders si aplica
-    object.traverse(function (child) {
-      if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
 
-        if (child.morphTargetDictionary) {
+        if (child.morphTargetDictionary && child.morphTargetInfluences) {
           guiMorphsFolder.show();
-          const meshFolder = guiMorphsFolder.addFolder(
-            child.name || child.uuid
-          );
+          const meshFolder = guiMorphsFolder.addFolder(child.name || child.uuid);
 
           Object.keys(child.morphTargetDictionary).forEach((key) => {
             meshFolder.add(
@@ -226,17 +179,21 @@ function loadAsset(asset) {
             );
           });
         }
-      }
-    });
+      });
 
-    scene.add(object);
-  });
+      scene.add(object);
+    },
+    undefined,
+    (err) => {
+      console.error("❌ Error cargando FBX:", asset, err);
+      console.error("URL intentada:", url);
+    }
+  );
 }
 
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 

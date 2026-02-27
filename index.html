@@ -1,28 +1,38 @@
 <!DOCTYPE html>
 <html lang="es">
-	<head>
-		<title>three.js webgl - FBX loader</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="/assets/css/main.css">
-	</head>
+  <head>
+    <title>three.js webgl - FBX loader</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
 
-	<body>
-		<div id="info">
-			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br />
-			Character and animation from <a href="https://www.mixamo.com/" target="_blank" rel="noopener">Mixamo</a>
-		</div>
+    <!-- ✅ RUTA RELATIVA (GitHub Pages) -->
+    <link type="text/css" rel="stylesheet" href="./assets/css/main.css" />
 
-		<script type="importmap">
-			{
-				"imports": {
-					"three": "./assets/build/three.module.js",
-					"three/addons/": "./assets/jsm/"
-				}
-			}
-		</script>
+    <!-- ✅ Opcional: evita 404 de favicon si no lo tienes -->
+    <!-- <link rel="icon" href="./favicon.ico" /> -->
+  </head>
 
-		<script type="module" src="./assets/js/main.js"></script>
+  <body>
+    <div id="info">
+      <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - FBXLoader<br />
+      Character and animation from
+      <a href="https://www.mixamo.com/" target="_blank" rel="noopener">Mixamo</a>
+    </div>
 
-	</body>
+    <!-- ✅ Importmap LOCAL correcto -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./assets/build/three.module.js",
+          "three/addons/": "./assets/jsm/"
+        }
+      }
+    </script>
+
+    <!-- ✅ JS principal -->
+    <script type="module" src="./assets/js/main.js"></script>
+  </body>
 </html>
