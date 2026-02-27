@@ -17,11 +17,11 @@ timer.connect(document);
 const params = {
   // ✅ Renombra el archivo para evitar espacios:
   // models/fbx/Samba_Dancing.fbx
-  asset: "Samba_Dancing",
+  asset: "Samba Dancing",
 };
 
 const assets = [
-  "Samba_Dancing",
+  "Samba Dancing",
   "morph_test",
   "monkey",
   "monkey_embedded_texture",
